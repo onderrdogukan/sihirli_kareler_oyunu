@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sihirli Kare Oyunu</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;}
+    body{padding:32px;display:flex;flex-direction:column;gap:22px;align-items:center;background:#000000;color:#2d374800}
+    h1{margin:0;font-size:26px;font-weight:700;color:#2b6cb0}
+    .controls{display:flex;gap:10px;align-items:center;background:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,0.08)}
+    input[type=number]{width:70px;padding:8px 10px;border-radius:10px;border:1px solid #cbd5e0;font-size:15px}
+    button{padding:10px 14px;border-radius:10px;border:0;background:#245a94;color:#fff;font-weight:600;cursor:pointer;transition:0.2s}
+    button:hover{background:#245a94}
+    button.secondary{background:#245a94}
+    button.secondary:hover{background:#245a94}
+
+    #magic-constant{font-weight:700;color:#245a94}
+
+    .grid{display:grid;gap:8px;margin-top:12px}
+    .cell{width:60px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:2px solid #e2e8f0;background:#fff;transition:0.2s;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+    .cell:hover{border-color:#3182ce;box-shadow:0 3px 8px rgba(0,0,0,0.08)}
+    .cell input{width:100%;height:100%;text-align:center;border:0;font-weight:700;font-size:18px;border-radius:10px;color:#2d3748;background:transparent}
+
+    .status{margin-top:14px;font-size:15px;font-weight:600}
+    .good{color:#2f855a}
+    .bad{color:#c53030}
+
+    .legend{font-size:14px;color:#4a5568;background:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+
+    footer{font-size:13px;color:#555;margin-top:8px;opacity:0.8}
+
+    @media (max-width:600px){.cell{width:44px;height:44px;font-size:14px}}
+  </style>
+</head>
+<body>
+  <h1>Sihirli Kare Oyunu</h1>
+
+  <div class="controls">
+    <label for="n">n (boyut):</label>
+    <input id="n" type="number" min="3" max="15" value="3">
+    <button id="make">Izgara Oluştur</button>
+    <button id="generate">Otomatik Doldur</button>
+    <button id="check" class="secondary">Kontrol Et</button>
+    <button id="clear" class="secondary">Temizle</button>
+  </div>
+
+  <div class="legend">Sihirli sabit <span id="magic-constant">—</span> (formül: m = n(n²+1)/2)</div>
+
+  <div id="board" aria-live="polite"></div>
+
+  <div class="status" id="status"></div>
+
+  <footer>Not: Otomatik doldurma tek sayılı n ve 4'e bölünebilen n(çift kapalı) için desteklenir. Tekrar 4 ile bölünmeyen çift n (ör. 6,10) için otomatik çözüm şu anda devre dışı; el ile oynayabilirsiniz.</footer>
+
+  <script>
+    const board = document.getElementById('board');
+    const nInput = document.getElementById('n');
+    const makeBtn = document.getElementById('make');
+    const genBtn = document.getElementById('generate');
+    const checkBtn = document.getElementById('check');
+    const clearBtn = document.getElementById('clear');
+    const status = document.getElementById('status');
+    const magicConstEl = document.getElementById('magic-constant');
+
+    let currentN = 3;
+
+    function magicConstant(n){
+      return n*(n*n+1)/2;
+    }
+
+    function createGrid(n){
+      currentN = n;
+      board.innerHTML = '';
+      board.className = 'grid';
+      board.style.gridTemplateColumns = `repeat(${n}, auto)`;  // ✔ FIXED
+
+      for(let i=0;i<n*n;i++){
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '1';
+        input.max = String(n*n);
+        input.dataset.index = i;
+        input.addEventListener('input', ()=>{status.textContent='';});
+        cell.appendChild(input);
+        board.appendChild(cell);
+      }
+
+      const inputs = board.querySelectorAll('input');
+      inputs.forEach(i=>i.value='');
+
+      function generateMagicSquare(n) {
+        let square = Array.from({ length: n }, () => Array(n).fill(0));
+
+        if (n % 2 === 1) {
+          let i = 0, j = Math.floor(n / 2);
+          for (let num = 1; num <= n * n; num++) {
+            square[i][j] = num;
+            let newI = (i - 1 + n) % n;
+            let newJ = (j + 1) % n;
+            if (square[newI][newJ] !== 0) i = (i + 1) % n;
+            else { i = newI; j = newJ; }
+          }
+        } else if (n % 4 === 0) {
+          let num = 1;
+          let rev = n * n;
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+              if ((i % 4 === j % 4) || ((i % 4) + (j % 4) === 3)) square[i][j] = rev--;
+              else square[i][j] = num++;
+            }
+          }
+        } else {
+          return null;
+        }
+        return square;
+      }
+
+      const magic = generateMagicSquare(n);
+
+      if(magic){
+        for (let row = 0; row < n; row++) {
+          const randomCol = Math.floor(Math.random() * n);
+          const idx = row * n + randomCol;
+          inputs[idx].value = magic[row][randomCol];
+        }
+      }
+
+      magicConstEl.textContent = magicConstant(n); // ✔ FIXED
+    }
+
+    function readGrid(){
+      const inputs = board.querySelectorAll('input');
+      const n = currentN;
+      const grid = [];
+      for(let r=0;r<n;r++){
+        grid[r]=[];
+        for(let c=0;c<n;c++){
+          const val = inputs[r*n+c].value;
+          grid[r][c] = val===''? null : Number(val);
+        }
+      }
+      return grid;
+    }
+
+    function fillGridFromArray(arr){
+      const inputs = board.querySelectorAll('input');
+      const n = currentN;
+      for(let r=0;r<n;r++){
+        for(let c=0;c<n;c++){
+          inputs[r*n+c].value = arr[r][c];
+        }
+      }
+    }
+
+    function checkMagic(grid){
+      const n = grid.length;
+      const m = magicConstant(n);
+      const used = new Set();
+      for(let r=0;r<n;r++){
+        for(let c=0;c<n;c++){
+          const v = grid[r][c];
+          if (v==null || !Number.isInteger(v) || v<1 || v>n*n) 
+            return {ok:false, reason:'Tüm hücreler 1..n² aralığında tam sayı olmalı'};
+          used.add(v);
+        }
+      }
+      if(used.size !== n*n) return {ok:false, reason:'Tüm sayılar birbirinden farklı olmalı (1..n²)'};
+
+      for (let r = 0; r < n; r++) {
+        const s = grid[r].reduce((a, b) => a + b, 0);
+        if (s !== m) return { ok: false, reason: `${r+1}. satırın toplamı ${s} (beklenen ${m})` };
+      }
+
+      for (let c = 0; c < n; c++) {
+        let s = 0;
+        for (let r = 0; r < n; r++) s += grid[r][c];
+        if (s !== m) return { ok: false, reason: `${c+1}. sütunun toplamı ${s} (beklenen ${m})` };
+      }
+
+      let s1 = 0, s2 = 0;
+      for (let i = 0; i < n; i++) { 
+        s1 += grid[i][i]; 
+        s2 += grid[i][n - 1 - i]; 
+      }
+
+      if (s1 !== m) return { ok: false, reason: `Ana köşegenin toplamı ${s1} (beklenen ${m})` };
+      if (s2 !== m) return { ok: false, reason: `Diğer köşegenin toplamı ${s2} (beklenen ${m})` };
+
+      return { ok: true };
+    } // ✔ FIX — eksik kapanış eklendi
+
+    makeBtn.addEventListener('click', ()=>{
+      const n = parseInt(nInput.value,10);
+      if(isNaN(n) || n<3 || n>15){ alert('n 3 ile 15 arasında olmalı'); return; }
+      createGrid(n);
+      status.textContent='';
+    });
+
+    genBtn.addEventListener('click', ()=>{
+      const n = parseInt(nInput.value,10);
+      createGrid(n);
+      const ms = generateMagicSquare(n);
+      if(ms===null){
+        status.innerHTML = '<span class="bad">Otomatik doldurma: Bu sürümde tek olarak 4 ile bölünemeyen çift n desteklenmiyor.</span>';
+        return;
+      }
+      fillGridFromArray(ms);
+      status.innerHTML = '<span class="good">Otomatik doldurma tamamlandı.</span>';
+    });
+
+    checkBtn.addEventListener('click', ()=>{
+      const grid = readGrid();
+      const res = checkMagic(grid);
+      if(res.ok){
+        status.innerHTML = '<span class="good">Tebrikler! Bu bir sihirli kare.</span>';
+      } else {
+        status.innerHTML = `<span class="bad">Hata: ${res.reason}</span>`;  // ✔ FIXED
+      }
+    });
+
+    clearBtn.addEventListener('click', ()=>{
+      const inputs = board.querySelectorAll('input');
+      inputs.forEach(i=>i.value='');
+      status.textContent='';
+    });
+
+    createGrid(3);
+  </script>
+</body>
+</html>
