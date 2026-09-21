@@ -1,4 +1,4 @@
-# Sihirli Kare (Magic Square) Algoritması ve Oyunu
+# *Sihirli Kare (Magic Square) Algoritması ve Oyunu*
 
 Matematiksel kurallara dayanan, HTML5, CSS3 ve saf (Vanilla) JavaScript ile geliştirilmiş
 dinamik bir sihirli kare (magic square) bulmaca ve algoritma simülasyonudur.
@@ -18,7 +18,7 @@ Bu proje, harici kütüphaneler kullanılmadan karmaşık 2D matris (array) oper
 * **Veri Yapıları:** 2D Arrays (Matrisler), Set (Benzersizlik kontrolü)
 
 ## Canlı Demoyu İncele
-**[Projeyi Tarayıcıda Çalıştırmak İçin Tıklayın](https://onderrdogukan.github.io/sihirli_kareler_oyunu/)
+**[Projeyi Tarayıcıda Çalıştırmak İçin Tıklayın](https://onderrdogukan.github.io/sihirli_kareler_oyunu/)**
 
 ---
 Geliştirici: Doğukan Önder - 2026
